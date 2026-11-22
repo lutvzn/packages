@@ -14,6 +14,8 @@ on other people's COPRs.
 | `hyprlang` | 0.6.8 | |
 | `hyprutils` | 0.14.4 | Newer than Fedora's 0.7.1 and replaces it |
 | `hyprwire` | 0.3.1 | |
+| `xdg-desktop-portal-hyprland` | 1.5.0 | Screen sharing, screenshots and global shortcuts under Hyprland |
+| `hyprtoolkit` | 0.6.0 | GUI toolkit for its screen share picker |
 | `hyprland-protocols-devel` | 0.8.0 | Build-only |
 | `hyprwayland-scanner-devel` | 0.4.6 | Build-only. Fedora's 0.4.2 generates code GCC 16 rejects |
 
@@ -49,8 +51,8 @@ RUN --mount=type=bind,source=keys/lutvzn-packages.gpg,target=/tmp/lutvzn-package
         --setopt=lutvzn.gpgcheck=1 \
         --setopt=lutvzn.repo_gpgcheck=1 \
         --setopt=lutvzn.gpgkey=file:///tmp/lutvzn-packages.gpg \
-        --setopt=lutvzn.includepkgs='hyprland,aquamarine,hyprcursor,hyprgraphics,hyprlang,hyprutils,hyprwire' \
-        hyprland
+        --setopt=lutvzn.includepkgs='hyprland,aquamarine,hyprcursor,hyprgraphics,hyprlang,hyprutils,hyprwire,hyprtoolkit,xdg-desktop-portal-hyprland' \
+        hyprland xdg-desktop-portal-hyprland
 ```
 
 On a regular Fedora system:
@@ -65,8 +67,17 @@ sudo curl -o /etc/yum.repos.d/lutvzn-packages.repo https://lutvzn.github.io/pack
 2. Put the SHA-256 of every source in `specs/<name>/sources`
    (`sha256sum <file> > sources`).
 3. Add the name to `PACKAGES` in `build.sh`, after anything it builds against.
-4. Push to `main`. The workflow builds every package, signs them and publishes
+4. Push to `main`. The workflow builds what changed, signs it and publishes
    the repository.
+
+Packages whose exact name-version-release is already published aren't rebuilt:
+`build.sh` downloads them from the repo instead, after checking they're signed
+with this repo's key. So:
+
+- When you change a spec without changing `Version`, bump `Release`, or the
+  change won't be built.
+- When a library's soname changes, also bump `Release` on everything that
+  builds against it, so they get rebuilt against the new one.
 
 To build locally without publishing:
 

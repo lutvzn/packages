@@ -37,8 +37,9 @@ jobs:
       - name: Build packages
         run: ./build.sh
 
-      # Sign every RPM and the repo metadata, so dnf can check both
+      # Sign the newly built RPMs and the repo metadata, so dnf can check both
       # (gpgcheck and repo_gpgcheck). The private key only exists in this secret.
+      # Packages build.sh downloaded from the published repo are already signed.
       - name: Sign and create repository
         if: github.event_name != 'pull_request'
         env:
@@ -51,15 +52,22 @@ jobs:
           . /etc/os-release
           repo=site/fedora/$VERSION_ID/$(uname -m)
           mkdir -p "$repo"
-          mv out/*.rpm "$repo/"
-          rpmsign --define "_openpgp_sign_id $SIGNING_KEY" --define "_gpg_name $SIGNING_KEY" \
-            --addsign "$repo"/*.rpm
+          shopt -s nullglob
+          new=(out/built/*.rpm)
+          if (( ${#new[@]} )); then
+            rpmsign --define "_openpgp_sign_id $SIGNING_KEY" --define "_gpg_name $SIGNING_KEY" \
+              --addsign "${new[@]}"
+          fi
+          mv out/built/*.rpm out/published/*.rpm "$repo/"
 
-          # Check the signatures against the public key in this repo, not the keyring.
+          # Check every package is signed, against the public key in this repo.
           mkdir verify
           rpmdb --root "$PWD/verify" --initdb
           rpmkeys --root "$PWD/verify" --import RPM-GPG-KEY-lutvzn-packages
-          rpmkeys --root "$PWD/verify" --checksig "$repo"/*.rpm
+          if rpmkeys --root "$PWD/verify" --checksig "$repo"/*.rpm | grep -v ': digests signatures OK$'; then
+            echo "The packages above are unsigned or fail the signature check" >&2
+            exit 1
+          fi
 
           createrepo_c "$repo"
           gpg --batch --yes --local-user "$SIGNING_KEY" --detach-sign --armor "$repo/repodata/repomd.xml"
