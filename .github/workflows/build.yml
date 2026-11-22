@@ -57,7 +57,7 @@ jobs:
 
           # Check the signatures against the public key in this repo, not the keyring.
           mkdir verify
-          rpmkeys --root "$PWD/verify" --initdb
+          rpmdb --root "$PWD/verify" --initdb
           rpmkeys --root "$PWD/verify" --import RPM-GPG-KEY-lutvzn-packages
           rpmkeys --root "$PWD/verify" --checksig "$repo"/*.rpm
 
