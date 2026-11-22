@@ -1,0 +1,5 @@
+/out/
+/rpmbuild/
+/site/
+/verify/
+*.tar.gz

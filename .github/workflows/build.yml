@@ -1,0 +1,86 @@
+name: Build packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'specs/**'
+      - 'build.sh'
+      - 'RPM-GPG-KEY-lutvzn-packages'
+      - '.github/workflows/build.yml'
+  pull_request:
+    paths:
+      - 'specs/**'
+      - 'build.sh'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Public fingerprint of the key in RPM-GPG-KEY-lutvzn-packages.
+  SIGNING_KEY: A7CC08936B30B427873E2B2D15DF8D57EA7D3A64
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Match the Fedora release Anatase is built on.
+    container: registry.fedoraproject.org/fedora:45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build packages
+        run: ./build.sh
+
+      # Sign every RPM and the repo metadata, so dnf can check both
+      # (gpgcheck and repo_gpgcheck). The private key only exists in this secret.
+      - name: Sign and create repository
+        if: github.event_name != 'pull_request'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          dnf -y install --setopt=install_weak_deps=False rpm-sign createrepo_c gnupg2 tar
+          export GNUPGHOME=$(mktemp -d)
+          gpg --batch --import <<< "$GPG_PRIVATE_KEY"
+
+          . /etc/os-release
+          repo=site/fedora/$VERSION_ID/$(uname -m)
+          mkdir -p "$repo"
+          mv out/*.rpm "$repo/"
+          rpmsign --define "_openpgp_sign_id $SIGNING_KEY" --define "_gpg_name $SIGNING_KEY" \
+            --addsign "$repo"/*.rpm
+
+          # Check the signatures against the public key in this repo, not the keyring.
+          mkdir verify
+          rpmkeys --root "$PWD/verify" --initdb
+          rpmkeys --root "$PWD/verify" --import RPM-GPG-KEY-lutvzn-packages
+          rpmkeys --root "$PWD/verify" --checksig "$repo"/*.rpm
+
+          createrepo_c "$repo"
+          gpg --batch --yes --local-user "$SIGNING_KEY" --detach-sign --armor "$repo/repodata/repomd.xml"
+          cp RPM-GPG-KEY-lutvzn-packages lutvzn-packages.repo site/
+          rm -rf "$GNUPGHOME" verify
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        if: github.event_name != 'pull_request'
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
