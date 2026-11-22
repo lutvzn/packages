@@ -65,7 +65,9 @@ Vorbis, subtitles through libass, HTTPS through GnuTLS, and VA-API, NVENC/NVDEC
 and Vulkan hardware acceleration.
 
 %prep
-%autosetup -n ffmpeg-%{version} -p1 -a1 -a2
+%autosetup -n ffmpeg-%{version} -p1 -a1
+# %%setup only takes one -a, so unpack x265 separately.
+tar -xzf %{SOURCE2}
 
 %build
 %set_build_flags
