@@ -15,7 +15,8 @@ on other people's COPRs.
 | `hyprutils` | 0.14.4 | Newer than Fedora's 0.7.1 and replaces it |
 | `hyprwire` | 0.3.1 | |
 | `xdg-desktop-portal-hyprland` | 1.5.0 | Screen sharing, screenshots and global shortcuts under Hyprland |
-| `hyprtoolkit` | 0.6.0 | GUI toolkit for its screen share picker |
+| `hyprtoolkit` | 0.6.0 | GUI toolkit for the screen share picker and hyprland-guiutils |
+| `hyprland-guiutils` | 0.2.2 | Dialogs, run prompt and welcome screen Hyprland calls |
 | `hyprland-protocols-devel` | 0.8.0 | Build-only |
 | `hyprwayland-scanner-devel` | 0.4.6 | Build-only. Fedora's 0.4.2 generates code GCC 16 rejects |
 
@@ -51,8 +52,8 @@ RUN --mount=type=bind,source=keys/lutvzn-packages.gpg,target=/tmp/lutvzn-package
         --setopt=lutvzn.gpgcheck=1 \
         --setopt=lutvzn.repo_gpgcheck=1 \
         --setopt=lutvzn.gpgkey=file:///tmp/lutvzn-packages.gpg \
-        --setopt=lutvzn.includepkgs='hyprland,aquamarine,hyprcursor,hyprgraphics,hyprlang,hyprutils,hyprwire,hyprtoolkit,xdg-desktop-portal-hyprland' \
-        hyprland xdg-desktop-portal-hyprland
+        --setopt=lutvzn.includepkgs='hyprland,aquamarine,hyprcursor,hyprgraphics,hyprlang,hyprutils,hyprwire,hyprtoolkit,xdg-desktop-portal-hyprland,hyprland-guiutils' \
+        hyprland xdg-desktop-portal-hyprland hyprland-guiutils
 ```
 
 On a regular Fedora system:

@@ -25,6 +25,7 @@ PACKAGES=(
     hyprtoolkit
     hyprland
     xdg-desktop-portal-hyprland
+    hyprland-guiutils
 )
 
 root=$PWD
