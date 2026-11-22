@@ -37,9 +37,10 @@ jobs:
       - name: Build packages
         run: ./build.sh
 
-      # Sign the newly built RPMs and the repo metadata, so dnf can check both
-      # (gpgcheck and repo_gpgcheck). The private key only exists in this secret.
-      # Packages build.sh downloaded from the published repo are already signed.
+      # Sign the newly built RPMs, the source RPMs and the repo metadata, so dnf
+      # can check them (gpgcheck and repo_gpgcheck). The private key only exists in
+      # this secret. Packages build.sh downloaded from the published repo are
+      # already signed.
       - name: Sign and create repository
         if: github.event_name != 'pull_request'
         env:
@@ -51,26 +52,30 @@ jobs:
 
           . /etc/os-release
           repo=site/fedora/$VERSION_ID/$(uname -m)
-          mkdir -p "$repo"
+          source=site/fedora/$VERSION_ID/source
+          mkdir -p "$repo" "$source"
           shopt -s nullglob
-          new=(out/built/*.rpm)
+          new=(out/built/*.rpm out/srpms/*.rpm)
           if (( ${#new[@]} )); then
             rpmsign --define "_openpgp_sign_id $SIGNING_KEY" --define "_gpg_name $SIGNING_KEY" \
               --addsign "${new[@]}"
           fi
           mv out/built/*.rpm out/published/*.rpm "$repo/"
+          mv out/srpms/*.rpm "$source/"
 
           # Check every package is signed, against the public key in this repo.
           mkdir verify
           rpmdb --root "$PWD/verify" --initdb
           rpmkeys --root "$PWD/verify" --import RPM-GPG-KEY-lutvzn-packages
-          if rpmkeys --root "$PWD/verify" --checksig "$repo"/*.rpm | grep -v ': digests signatures OK$'; then
+          if rpmkeys --root "$PWD/verify" --checksig "$repo"/*.rpm "$source"/*.rpm | grep -v ': digests signatures OK$'; then
             echo "The packages above are unsigned or fail the signature check" >&2
             exit 1
           fi
 
-          createrepo_c "$repo"
-          gpg --batch --yes --local-user "$SIGNING_KEY" --detach-sign --armor "$repo/repodata/repomd.xml"
+          for dir in "$repo" "$source"; do
+            createrepo_c "$dir"
+            gpg --batch --yes --local-user "$SIGNING_KEY" --detach-sign --armor "$dir/repodata/repomd.xml"
+          done
           cp RPM-GPG-KEY-lutvzn-packages lutvzn-packages.repo site/
           rm -rf "$GNUPGHOME" verify
 

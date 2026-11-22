@@ -17,6 +17,7 @@ on other people's COPRs.
 | `xdg-desktop-portal-hyprland` | 1.5.0 | Screen sharing, screenshots and global shortcuts under Hyprland |
 | `hyprtoolkit` | 0.6.0 | GUI toolkit for the screen share picker and hyprland-guiutils |
 | `hyprland-guiutils` | 0.2.2 | Dialogs, run prompt and welcome screen Hyprland calls |
+| `ffmpeg-full` | 9.1 | `ffmpeg` and `ffprobe` with x264 and x265 (8/10/12-bit) linked in, plus VA-API, NVENC/NVDEC and Vulkan. Installs no libraries, so it doesn't clash with Fedora's `libav*-free`. Conflicts with `ffmpeg-free` |
 | `hyprland-protocols-devel` | 0.8.0 | Build-only |
 | `hyprwayland-scanner-devel` | 0.4.6 | Build-only. Fedora's 0.4.2 generates code GCC 16 rejects |
 
@@ -29,7 +30,12 @@ Built for the Fedora release Anatase uses (currently 45), x86_64.
   through a reviewed commit.
 - **Build**: a clean `fedora:45` container on GitHub Actions, with actions
   pinned to commit SHAs. Build dependencies come only from Fedora.
-- **Signing**: RPMs and `repomd.xml` are signed with the key in
+- **Source RPMs**: every package's source RPM, built from those checked
+  sources, is published and signed next to the binaries, under
+  `fedora/<release>/source/`. `ffmpeg-full` is GPL, so its sources must be
+  available. To get one:
+  `dnf download --source --repofrompath='lutvzn-source,https://lutvzn.github.io/packages/fedora/$releasever/source/' --repo lutvzn-source ffmpeg-full`
+- **Signing**: RPMs, source RPMs and `repomd.xml` are signed with the key in
   [`RPM-GPG-KEY-lutvzn-packages`](./RPM-GPG-KEY-lutvzn-packages):
 
   ```
@@ -78,7 +84,11 @@ with this repo's key. So:
 - When you change a spec without changing `Version`, bump `Release`, or the
   change won't be built.
 - When a library's soname changes, also bump `Release` on everything that
-  builds against it, so they get rebuilt against the new one.
+  builds against it, so they get rebuilt against the new one. This includes
+  Fedora's libraries: if Fedora moves, say, libvpx or SVT-AV1 to a new soname,
+  installing `ffmpeg-full` fails until its `Release` is bumped.
+- Nothing here updates itself. Check for new upstream releases, especially of
+  `ffmpeg-full`, since ffmpeg parses untrusted files and its fixes matter.
 
 To build locally without publishing:
 
