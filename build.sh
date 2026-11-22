@@ -10,6 +10,7 @@ PACKAGES=(
     hyprlang
     hyprwire
     hyprland-protocols
+    hyprwayland-scanner
     aquamarine
     hyprcursor
     hyprgraphics

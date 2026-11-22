@@ -13,7 +13,7 @@ BuildRequires:  pkgconfig(gbm)
 BuildRequires:  pkgconfig(glesv2)
 BuildRequires:  pkgconfig(hwdata)
 BuildRequires:  pkgconfig(hyprutils) >= 0.8.0
-BuildRequires:  pkgconfig(hyprwayland-scanner) >= 0.4.0
+BuildRequires:  pkgconfig(hyprwayland-scanner) >= 0.4.6
 BuildRequires:  pkgconfig(libdisplay-info)
 BuildRequires:  pkgconfig(libdrm)
 BuildRequires:  pkgconfig(libinput) >= 1.26.0

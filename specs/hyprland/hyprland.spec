@@ -31,7 +31,7 @@ BuildRequires:  pkgconfig(hyprgraphics) >= 0.5.1
 BuildRequires:  pkgconfig(hyprland-protocols) >= 0.8.0
 BuildRequires:  pkgconfig(hyprlang) >= 0.6.7
 BuildRequires:  pkgconfig(hyprutils) >= 0.14.3
-BuildRequires:  pkgconfig(hyprwayland-scanner) >= 0.3.10
+BuildRequires:  pkgconfig(hyprwayland-scanner) >= 0.4.6
 BuildRequires:  pkgconfig(hyprwire)
 BuildRequires:  pkgconfig(hyprwire-scanner)
 BuildRequires:  pkgconfig(lcms2)

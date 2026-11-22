@@ -15,6 +15,7 @@ on other people's COPRs.
 | `hyprutils` | 0.14.4 | Newer than Fedora's 0.7.1 and replaces it |
 | `hyprwire` | 0.3.1 | |
 | `hyprland-protocols-devel` | 0.8.0 | Build-only |
+| `hyprwayland-scanner-devel` | 0.4.6 | Build-only. Fedora's 0.4.2 generates code GCC 16 rejects |
 
 Built for the Fedora release Anatase uses (currently 45), x86_64.
 
