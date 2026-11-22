@@ -17,7 +17,7 @@ on other people's COPRs.
 | `xdg-desktop-portal-hyprland` | 1.5.0 | Screen sharing, screenshots and global shortcuts under Hyprland |
 | `hyprtoolkit` | 0.6.0 | GUI toolkit for the screen share picker and hyprland-guiutils |
 | `hyprland-guiutils` | 0.2.2 | Dialogs, run prompt and welcome screen Hyprland calls |
-| `ffmpeg-full` | 9.1 | `ffmpeg` and `ffprobe` with x264 and x265 (8/10/12-bit) linked in, plus VA-API, NVENC/NVDEC and Vulkan. Installs no libraries, so it doesn't clash with Fedora's `libav*-free`. Conflicts with `ffmpeg-free` |
+| `ffmpeg-full` | 9.1 | `ffmpeg` and `ffprobe` with x264 and x265 (8/10/12-bit) linked in, plus VA-API, NVENC/NVDEC and Vulkan. Its libraries live in a private `/usr/lib64/ffmpeg-full` that only these two programs load, so they don't clash with Fedora's `libav*-free`. Conflicts with `ffmpeg-free` |
 | `hyprland-protocols-devel` | 0.8.0 | Build-only |
 | `hyprwayland-scanner-devel` | 0.4.6 | Build-only. Fedora's 0.4.2 generates code GCC 16 rejects |
 

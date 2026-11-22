@@ -1,19 +1,29 @@
 # ffmpeg and ffprobe with H.264 and H.265 encoding (x264, x265), which Fedora's
 # ffmpeg-free leaves out. x264 and x265 aren't in Fedora either, so they are built
-# here as static libraries, and ffmpeg's own libraries are linked statically too.
-# Only the two programs get installed, so nothing clashes with the libav*-free
-# libraries the system already has. Every other codec, and VA-API, NVENC/NVDEC and
-# Vulkan, comes from Fedora.
+# here as static libraries and linked into libavcodec.
+# ffmpeg's own libraries go in a private directory, %{_libdir}/ffmpeg-full, that
+# only these two programs load (through their rpath). They are shared between the
+# two, which halves the size compared to linking each program statically, and they
+# don't clash with the libav*-free libraries the system already has: nothing else
+# finds them, and the package doesn't advertise them to dnf. Every other codec, and
+# VA-API, NVENC/NVDEC and Vulkan, comes from Fedora.
 
 %global x264_commit b35605ace3ddf7c1a5d67a2eb553f034aef41d55
 %global x265_version 4.2
 
+%global privlibdir %{_libdir}/ffmpeg-full
+
 # ffmpeg's and x265's hand-written assembly doesn't mix well with LTO.
 %global _lto_cflags %{nil}
 
+# The private libraries have the same sonames as Fedora's libav*-free, so keep
+# them out of the package's Provides, and don't require what it ships itself.
+%global __provides_exclude_from ^%{privlibdir}/
+%global __requires_exclude ^lib(avcodec|avdevice|avfilter|avformat|avutil|swresample|swscale)\\.so
+
 Name:           ffmpeg-full
 Version:        9.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        ffmpeg and ffprobe with H.264 and H.265 encoding
 # ffmpeg is built with --enable-gpl; x264 and x265 are GPL-2.0-or-later.
 License:        GPL-2.0-or-later
@@ -122,11 +132,14 @@ PKG_CONFIG_PATH="$deps/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" \
     --prefix=%{_prefix} \
     --bindir=%{_bindir} \
     --datadir=%{_datadir}/ffmpeg \
+    --libdir=%{privlibdir} \
+    --shlibdir=%{privlibdir} \
+    --enable-rpath \
     --optflags="%{build_cflags}" \
     --extra-ldflags="%{build_ldflags}" \
     --extra-libs='-lstdc++ -lm -lpthread -ldl' \
-    --disable-shared \
-    --enable-static \
+    --enable-shared \
+    --disable-static \
     --enable-pic \
     --disable-stripping \
     --disable-doc \
@@ -161,19 +174,28 @@ PKG_CONFIG_PATH="$deps/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" \
 %make_build
 
 %install
-make DESTDIR=%{buildroot} install-progs install-data
+make DESTDIR=%{buildroot} install-progs install-data install-libs
+# Only the programs link against these, so the unversioned links aren't needed.
+rm %{buildroot}%{privlibdir}/*.so
 cp -p x264-%{x264_commit}/COPYING COPYING.x264
 cp -p x265_%{x265_version}/COPYING COPYING.x265
 
 %check
-# The encoders this package exists for must be there, and x264 and x265 must
-# encode, including x265's linked-in 10-bit encoder.
-./ffmpeg -hide_banner -encoders > encoders
+# Both programs must find the private libraries through their rpath.
+for prog in ffmpeg ffprobe; do
+    readelf -d %{buildroot}%{_bindir}/$prog | grep -E "R(UN)?PATH.*\[%{privlibdir}\]"
+done
+# Run the installed programs against the installed libraries (from the buildroot,
+# so through LD_LIBRARY_PATH here). The encoders this package exists for must be
+# there, and x264 and x265 must encode, including x265's linked-in 10-bit encoder.
+export LD_LIBRARY_PATH=%{buildroot}%{privlibdir}
+ffmpeg=%{buildroot}%{_bindir}/ffmpeg
+$ffmpeg -hide_banner -encoders > encoders
 for enc in libx264 libx265 libsvtav1 h264_vaapi hevc_vaapi h264_nvenc hevc_nvenc; do
     grep -q " $enc " encoders || { echo "Missing encoder $enc" >&2; exit 1; }
 done
 for args in '-c:v libx264' '-c:v libx265' '-c:v libx265 -pix_fmt yuv420p10le'; do
-    ./ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc=size=128x72:duration=0.2 \
+    $ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc=size=128x72:duration=0.2 \
         $args -f null -
 done
 
@@ -182,4 +204,5 @@ done
 %doc README.md
 %{_bindir}/ffmpeg
 %{_bindir}/ffprobe
+%{privlibdir}/
 %{_datadir}/ffmpeg/
