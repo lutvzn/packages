@@ -1,7 +1,7 @@
 [lutvzn-packages]
 name=lutvzn packages
-baseurl=https://lutvzn.github.io/packages/fedora/$releasever/$basearch/
+baseurl=https://lutvzn.github.io/adamite-pkgs/fedora/$releasever/$basearch/
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
-gpgkey=https://lutvzn.github.io/packages/RPM-GPG-KEY-lutvzn-packages
+gpgkey=https://lutvzn.github.io/adamite-pkgs/RPM-GPG-KEY-lutvzn-packages

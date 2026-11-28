@@ -1,4 +1,4 @@
-# packages
+# adamite-pkgs
 
 RPMs for software that isn't in the Fedora repos, built from pinned upstream
 sources on GitHub Actions and published as a signed dnf repository on GitHub
@@ -34,7 +34,7 @@ Built for the Fedora release Anatase uses (currently 45), x86_64.
   sources, is published and signed next to the binaries, under
   `fedora/<release>/source/`. `ffmpeg-full` is GPL, so its sources must be
   available. To get one:
-  `dnf download --source --repofrompath='lutvzn-source,https://lutvzn.github.io/packages/fedora/$releasever/source/' --repo lutvzn-source ffmpeg-full`
+  `dnf download --source --repofrompath='lutvzn-source,https://lutvzn.github.io/adamite-pkgs/fedora/$releasever/source/' --repo lutvzn-source ffmpeg-full`
 - **Signing**: RPMs, source RPMs and `repomd.xml` are signed with the key in
   [`RPM-GPG-KEY-lutvzn-packages`](./RPM-GPG-KEY-lutvzn-packages):
 
@@ -54,7 +54,7 @@ packages you need:
 ```dockerfile
 RUN --mount=type=bind,source=keys/lutvzn-packages.gpg,target=/tmp/lutvzn-packages.gpg \
     dnf -y install --setopt=install_weak_deps=False \
-        --repofrompath='lutvzn,https://lutvzn.github.io/packages/fedora/$releasever/$basearch/' \
+        --repofrompath='lutvzn,https://lutvzn.github.io/adamite-pkgs/fedora/$releasever/$basearch/' \
         --setopt=lutvzn.gpgcheck=1 \
         --setopt=lutvzn.repo_gpgcheck=1 \
         --setopt=lutvzn.gpgkey=file:///tmp/lutvzn-packages.gpg \
@@ -65,7 +65,7 @@ RUN --mount=type=bind,source=keys/lutvzn-packages.gpg,target=/tmp/lutvzn-package
 On a regular Fedora system:
 
 ```bash
-sudo curl -o /etc/yum.repos.d/lutvzn-packages.repo https://lutvzn.github.io/packages/lutvzn-packages.repo
+sudo curl -o /etc/yum.repos.d/lutvzn-packages.repo https://lutvzn.github.io/adamite-pkgs/lutvzn-packages.repo
 ```
 
 ## Adding or updating a package
@@ -74,8 +74,7 @@ sudo curl -o /etc/yum.repos.d/lutvzn-packages.repo https://lutvzn.github.io/pack
 2. Put the SHA-256 of every source in `specs/<name>/sources`
    (`sha256sum <file> > sources`).
 3. Add the name to `PACKAGES` in `build.sh`, after anything it builds against.
-4. Push to `main`. The workflow builds what changed, signs it and publishes
-   the repository.
+4. Open a PR against `master`. Merging it triggers the signed Pages deployment.
 
 Packages whose exact name-version-release is already published aren't rebuilt:
 `build.sh` downloads them from the repo instead, after checking they're signed
@@ -87,8 +86,19 @@ with this repo's key. So:
   builds against it, so they get rebuilt against the new one. This includes
   Fedora's libraries: if Fedora moves, say, libvpx or SVT-AV1 to a new soname,
   installing `ffmpeg-full` fails until its `Release` is bumped.
-- Nothing here updates itself. Check for new upstream releases, especially of
-  `ffmpeg-full`, since ffmpeg parses untrusted files and its fixes matter.
+
+The **Check upstream releases** workflow runs daily and can also run on demand.
+It proposes stable updates in separate PRs for FFmpeg and the Hyprland stack.
+It updates the spec and primary source checksum together, leaves any bundled
+dependency pins unchanged, and bumps `Release` for transitive dependents in the
+repo so they rebuild. An open update PR is left untouched until it is merged or
+closed.
+
+In **Settings → Actions → General**, enable **Allow GitHub Actions to create
+and approve pull requests** to let the workflow open PRs. The bot does not
+approve or merge them. On each bot PR, choose **Approve workflows to run** to
+start the unsigned build. Review the upstream release and source changes before
+merging; a downloaded checksum pins the proposed bytes, not their provenance.
 
 To build locally without publishing:
 

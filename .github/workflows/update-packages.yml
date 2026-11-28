@@ -1,0 +1,59 @@
+name: Check upstream releases
+
+on:
+  schedule:
+    - cron: '23 8 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: package-update-prs
+
+jobs:
+  propose:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [hyprland, ffmpeg]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Propose package updates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE_GROUP: ${{ matrix.group }}
+        run: |
+          prefix="automation/update-$PACKAGE_GROUP-"
+          open=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&base=master&per_page=100" \
+            --jq ".[] | select(.head.repo.full_name == \"$GITHUB_REPOSITORY\" and (.head.ref | startswith(\"$prefix\"))) | .number")
+          if [[ -n "$open" ]]; then
+            echo "An update PR is already open: $open"
+            exit 0
+          fi
+
+          body="$RUNNER_TEMP/package-updates.md"
+          python3 update-packages.py "$PACKAGE_GROUP" > "$body"
+          if git diff --quiet -- specs; then
+            echo 'All packages are up to date.'
+            exit 0
+          fi
+          printf '\nApprove the unsigned package build and review the sources before merging.\n' >> "$body"
+          cat "$body"
+
+          branch="$prefix$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          title="Update $PACKAGE_GROUP packages"
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -am "$title"
+          gh auth setup-git --hostname github.com
+          git push origin "HEAD:refs/heads/$branch"
+          gh pr create --repo "$GITHUB_REPOSITORY" --base master --head "$branch" \
+            --title "$title" --body-file "$body"

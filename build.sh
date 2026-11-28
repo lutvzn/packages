@@ -38,7 +38,7 @@ srpms=$root/out/srpms
 mkdir -p "$built" "$published" "$srpms"
 
 . /etc/os-release
-repo_url=${REPO_URL:-https://lutvzn.github.io/packages/fedora/$VERSION_ID/$(uname -m)}
+repo_url=${REPO_URL:-https://lutvzn.github.io/adamite-pkgs/fedora/$VERSION_ID/$(uname -m)}
 
 dnf -y install --setopt=install_weak_deps=False \
     rpm-build rpmdevtools 'dnf5-command(builddep)'
