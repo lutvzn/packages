@@ -1,5 +1,5 @@
 Name:           hyprgraphics
-Version:        0.6.0
+Version:        0.7.0
 Release:        1%{?dist}
 Summary:        Graphics library for Hyprland
 License:        BSD-3-Clause
@@ -20,6 +20,7 @@ BuildRequires:  pkgconfig(libjxl_cms)
 BuildRequires:  pkgconfig(libjxl_threads)
 BuildRequires:  pkgconfig(libmagic)
 BuildRequires:  pkgconfig(libpng)
+BuildRequires:  pkgconfig(librsvg-2.0)
 BuildRequires:  pkgconfig(libwebp)
 BuildRequires:  pkgconfig(pangocairo)
 BuildRequires:  pkgconfig(pixman-1)

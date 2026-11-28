@@ -1,6 +1,6 @@
 Name:           xdg-desktop-portal-hyprland
 Version:        1.5.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        xdg-desktop-portal backend for Hyprland
 
 # xdg-desktop-portal-hyprland: BSD-3-Clause
